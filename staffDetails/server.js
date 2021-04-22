@@ -4,11 +4,20 @@ const bodyParser = require('body-parser');
 
 var app = express();
 
-MongoClient.connect('mongodb://localhost:27017', {useUnifiedTopology: true});
-console.log('connected to mongoClinet');
+MongoClient.connect('mongodb://localhost:27017', {useUnifiedTopology: true}, (err, client) => {
+    if (err) {
+        return console.log('unable to connect to db',err)
+    }
+    var db = client.db('staffDataCollection')
+    console.log('connected to mongoClinet');
+});
 
 app.use(bodyParser.urlencoded({ extended: false}))
 app.use(bodyParser.json())
+
+app.post('/savingDetailsOfStaffs',(req, res) => {
+    
+})
 
 
 
