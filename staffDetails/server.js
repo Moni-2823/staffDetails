@@ -1,59 +1,116 @@
 const express = require('express');
 const {MongoClient, ObjectID} = require('mongodb');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
 var app = express();
 
 app.use(bodyParser.urlencoded({ extended: false}))
 app.use(bodyParser.json())
 
-MongoClient.connect('mongodb://localhost:27017', {useUnifiedTopology: true}, (err, client) => {
-    if (err) {
-        return console.log('unable to connect to db',err)
+var port = process.env.PORT || 3000;
+
+// MongoClient.connect('mongodb://localhost:27017', {useUnifiedTopology: true}, (err, client) => {
+//     if (err) {
+//         return console.log('unable to connect to db',err)
+//     }
+//     var db = client.db('staffData')
+//     console.log('connected to mongoClinet');
+
+mongoose.connect('mongodb://localhost:27017/staffDetails',{ useNewUrlParser: true, useUnifiedTopology: true })
+console.log('connected to mongoose');
+
+var dataRecords = mongoose.model('dataRecords',{
+    name:{
+        type: String
+    },
+    address:{
+        type: String
+    },
+    phone:{
+        type: Number
     }
-    var db = client.db('staffData')
-    console.log('connected to mongoClinet');
+})
 
 
-
+// app.post('/savingDetailsOfStaffs',(req, res) => {
+//     db.collection('staffDetails').insertOne(req.body, (err, data) => {
+//         if(err) {
+//             return console.log('error found',err);
+//         }
+//         console.log('data saved succesfully',data);
+//         res.send({msg: 'saved details is...', result: data});
+//     })
+// })
 
 app.post('/savingDetailsOfStaffs',(req, res) => {
-    db.collection('staffDetails').insertOne(req.body, (err, data) => {
-        if(err) {
-            return console.log('error found',err);
+    var records = new dataRecords(req.body)
+    records.save(req.body).then((doc) => {
+        if(!doc) {
+            return res.status(404).send({msg: 'data not found to save'});
         }
-        console.log('data saved succesfully',data);
-        res.send({msg: 'saved details is...', result: data});
+        console.log('details saved sucessfully',doc);
+        res.status(200).send({msg: 'saved details is...',returnedData: doc});
+    }, (err) => {
+        res.status(400).send({msg: 'error found',err});
     })
 })
 
 
-app.get('/fetchingDetailsOfStaffs', (req, res) => {
-    db.collection('staffDetails').find().toArray((err, data) => {
-        if(!data) {
-            console.log('empty data found',err);
+// app.get('/fetchingDetailsOfStaffs', (req, res) => {
+//     db.collection('staffDetails').find().toArray((err, data) => {
+//         if(!data) {
+//             console.log('empty data found',err);
+//         }
+//         console.log('staff details are...',data);
+//         res.send({msg: 'finded data is:',returnData: data});
+//     })
+// })
+
+app.get('/fetchingDetailsOfStaffs',(req, res) => {
+    dataRecords.find().then((doc) => {
+        if(!doc) {
+            return res.status(404).send({msg: 'staff details not found'});
         }
-        console.log('staff details are...',data);
-        res.send({msg: 'finded data is:',returnData: data});
+        console.log('details finded sucessfully',doc);
+        res.status(200).send({msg: 'finded details are::',returnedData: doc});
+    }, (err) => {
+        res.status(400).send({msg: 'errror found',err});
     })
 })
 
-app.post('/updatingDetails', (req, res) => {
-    db.collection('staffDetails').findOneAndUpdate({
-        _id: new ObjectID(req.body.id)
-    },{
-        $set: {
-            "name": req.body.name,
-            "gender": req.body.gender
+// app.post('/updatingDetails', (req, res) => {
+//     db.collection('staffDetails').findOneAndUpdate({
+//         _id: new ObjectID(req.body.id)
+//     },{
+//         $set: {
+//             "name": req.body.name,
+//             "gender": req.body.gender
+//         }
+//     },{
+//         returnOriginal: false
+//     }).then((data) => {
+//         if(!data.value) {
+//             return res.send({msg: 'data not fetched'})
+//         }
+//         console.log('deatails updated sucessfully',data);
+//         res.send({msg: 'updated details is:',returnData: data});
+//     })
+// })
+
+app.post('/updatingDetails',(req,res) => {
+    dataRecords.findByIdAndUpdate(req.body.id, 
+        {$set:
+            {name: req.body.name}
+        }, {new:true
+        }).then((doc) => {
+        if(!doc) {
+            return res.status(404).send({msg: 'details not found to update'});
         }
-    },{
-        returnOriginal: false
-    }).then((data) => {
-        if(!data.value) {
-            return res.send({msg: 'data not fetched'})
-        }
-        console.log('deatails updated sucessfully',data);
-        res.send({msg: 'updated details is:',returnData: data});
+        console.log('data updated sucessfully',doc);
+        res.status(200).send({msg: 'updated details is::',returnedData: doc});
+    }, (err) => {
+        res.status(400).send({msg: 'error found',err});
     })
 })
 
@@ -67,10 +124,22 @@ app.post('/deletingDetails',(req, res) => {
         res.send({msg: 'deleted data is :', returnData: data});
     })
 })
-});
+
+app.post('/deletingData', (req, res) => {
+    dataRecords.findByIdAndDelete(req.body.id).then((doc) => {
+        if(!doc) {
+            return res.status(404).send({msg: 'details not found to delete'});
+        }
+        console.log('data deleted sucessfully',doc);
+        res.status(200).send({msg: 'deleted data is:::',returnedData: doc});
+    }, (err) => {
+        res.status(400).send({msg: ' error found',err});
+    })
+})
+// });
 
 
 
-app.listen((3000), () => {
-    console.log('server is on port 3000');
+app.listen((port), () => {
+    console.log(`server is on port ${port}`);
 })
