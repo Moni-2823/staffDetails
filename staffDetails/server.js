@@ -8,6 +8,7 @@ var app = express();
 app.use(bodyParser.urlencoded({ extended: false}))
 app.use(bodyParser.json())
 
+//env = envirionment variable,, server assign port  hroku:2080, aws:3400, godaddy:1010 
 var port = process.env.PORT || 3000;
 
 // MongoClient.connect('mongodb://localhost:27017', {useUnifiedTopology: true}, (err, client) => {
@@ -17,10 +18,16 @@ var port = process.env.PORT || 3000;
 //     var db = client.db('staffData')
 //     console.log('connected to mongoClinet');
 
-mongoose.connect('mongodb://localhost:27017/staffDetails',{ useNewUrlParser: true, useUnifiedTopology: true })
-console.log('connected to mongoose');
+mongoose.connect('mongodb://localhost:27017/staffDetails',
+    { useNewUrlParser: true, useUnifiedTopology: true },
+    (err, success) => {
+        if (err) {
+            return console.log('unable to connet to mongo')
+        }
+        console.log('connected to mongoose');
+})
 
-var dataRecords = mongoose.model('dataRecords',{
+var recordsSchema = new mongoose.Schema({
     name:{
         type: String
     },
@@ -31,6 +38,13 @@ var dataRecords = mongoose.model('dataRecords',{
         type: Number
     }
 })
+
+// recordsSchema.methods.newMethodFunction =  function() {
+//     console.log(this.name)
+//     return this.name
+// }
+
+var dataRecords = mongoose.model('dataRecords', recordsSchema)
 
 
 // app.post('/savingDetailsOfStaffs',(req, res) => {
@@ -49,6 +63,7 @@ app.post('/savingDetailsOfStaffs',(req, res) => {
         if(!doc) {
             return res.status(404).send({msg: 'data not found to save'});
         }
+        // var theRetunFromMethod = doc.newMethodFunction()
         console.log('details saved sucessfully',doc);
         res.status(200).send({msg: 'saved details is...',returnedData: doc});
     }, (err) => {
@@ -102,7 +117,8 @@ app.post('/updatingDetails',(req,res) => {
     dataRecords.findByIdAndUpdate(req.body.id, 
         {$set:
             {name: req.body.name}
-        }, {new:true
+        }, {
+            new:true
         }).then((doc) => {
         if(!doc) {
             return res.status(404).send({msg: 'details not found to update'});
