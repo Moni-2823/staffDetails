@@ -18,7 +18,7 @@ var port = process.env.PORT || 3000;
 //     var db = client.db('staffData')
 //     console.log('connected to mongoClinet');
 
-mongoose.connect('mongodb://localhost:27017/staffDetails',
+mongoose.connect('mongodb+srv://moni-yadav:moni0987@cluster0.sxojg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
     { useNewUrlParser: true, useUnifiedTopology: true },
     (err, success) => {
         if (err) {
